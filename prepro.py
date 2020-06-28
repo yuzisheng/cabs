@@ -31,29 +31,33 @@ def find_bbox(file_path):
                                                 trajs["lng"].min(), trajs["lng"].max()))
 
 
-def heat_map(file_path, grid):
+def heat_map(traj_dir, grid):
     res = np.zeros((grid.row_num, grid.col_num), dtype=np.int32)
-    data = pd.read_csv(file_path)
-    print(data.head())
-    for i in range(len(data)):
-        lat = data["lat"][i]
-        lng = data["lng"][i]
-        try:
-            row_idx, col_idx = grid.get_matrix_idx(lat, lng)
-            res[row_idx, col_idx] += 1
-        except IndexError:
-            # print('({0}, {1}) is out of mbr, skip'.format(lat, lng))
-            continue
+    files = list(os.listdir(traj_dir))
+    for i in range(100):
+        traj = pd.read_csv(os.path.join(traj_dir, files[i]))
+        print("\r{}/{} done".format(i, len(files)), end=" ")
+        for j in range(len(traj)):
+            lat = traj["lat"][j]
+            lng = traj["lng"][j]
+            try:
+                row_idx, col_idx = grid.get_matrix_idx(lat, lng)
+                res[row_idx, col_idx] += 1
+            except IndexError:
+                # print('({}, {}) is out of mbr, skip'.format(lat, lng))
+                continue
     sns.set()
-    sns.heatmap(res, square=True)
+    res[res == 0] = 1  # 防止log运算出错
+    sns.heatmap(np.log(res), square=True, vmin=0)
+    plt.savefig("./data/san_rn.pdf")
     plt.show()
 
 
 if __name__ == '__main__':
     # merge_to_one("./data/taxi-sf")
     # find_bbox("./data/trajs.csv")
-    san_mbr = MBR(37.474, 122.637, 38.025, -121.926)  # 60km * 60km
-    san_grid = Grid(san_mbr, 600, 600)
-    heat_map("./data/trajs.csv", san_grid)
+    san_mbr = MBR(37.6988, -122.5173, 37.8089, -122.3784)  # 12km * 12km
+    san_grid = Grid(san_mbr, 1200, 1200)
+    heat_map("./data/taxi", san_grid)
 
-    print("ok")
+    print("\nok")
