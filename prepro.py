@@ -97,11 +97,40 @@ def empty_rate(traj_dir):
         print("{}: occupy count {}".format(start_date, count_occ(occ)))  # 打印最后一天信息
 
 
+def filter_od(traj_dir):
+    san_mbr = MBR(37.6988, -122.5173, 37.8089, -122.3784)  # 12km * 12km
+    files = list(os.listdir(traj_dir))
+    start_pos = pd.DataFrame(columns=("lat", "lng", "time"))
+    end_pos = pd.DataFrame(columns=("lat", "lng", "time"))
+    for i in range(len(files)):
+        print("\r{}/{} start to filter od {}".format(i + 1, len(files), files[i]), end=" ")
+        traj = pd.read_csv(os.path.join(traj_dir, files[i]))
+        o = []  # 忽略第一个点 (因为可能并不是起始点)
+        d = []
+        for j in range(1, len(traj)):
+            if not san_mbr.contains(traj["lat"][j], traj["lng"][j]):
+                # 过滤掉不在MBR内的点
+                continue
+            if traj["occ"][j] == 1 and traj["occ"][j - 1] == 1:
+                continue
+            elif traj["occ"][j] == 1 and traj["occ"][j - 1] == 0:
+                o.append([traj["lat"][j], traj["lng"][j], traj["time"][j]])
+            elif traj["occ"][j] == 0 and traj["occ"][j - 1] == 1:
+                d.append([traj["lat"][j], traj["lng"][j], traj["time"][j]])
+            else:
+                continue
+        start_pos = start_pos.append(pd.DataFrame(o, columns=["lat", "lng", "time"]))
+        end_pos = end_pos.append(pd.DataFrame(d, columns=["lat", "lng", "time"]))
+    start_pos.to_csv("./data/start_pos.csv", sep=",", index=False)
+    end_pos.to_csv("./data/end_pos.csv", sep=",", index=False)
+
+
 if __name__ == '__main__':
     # merge_to_one("./data/taxi-sf")
     # find_bbox("./data/trajs.csv")
     # sort_by_time("./data/taxi")
-    heat_map("./data/taxi")
-    empty_rate("./data/trajs")
+    # heat_map("./data/taxi")
+    # empty_rate("./data/trajs")
+    # filter_od("./data/trajs")
 
     print("\nok")
