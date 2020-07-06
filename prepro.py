@@ -9,6 +9,7 @@ from common.grid import Grid
 
 
 def merge_to_one(root_path):
+    """ 将多个文件合并方便处理 """
     files = list(filter(lambda x: x.startswith("new_"), os.listdir(root_path)))  # filter no data files
     trajs = pd.DataFrame(columns=("lat", "lng", "occ", "time", "oid"))
     oid = 1
@@ -25,6 +26,7 @@ def merge_to_one(root_path):
 
 
 def find_bbox(file_path):
+    """ 找到所有轨迹的MBR """
     trajs = pd.read_csv(file_path)
     # lat:(32.8697, 50.30546) lng:(-127.08143, -115.56218)
     print("lat: ({}, {})\nlng: ({}, {})".format(trajs["lat"].min(), trajs["lat"].max(),
@@ -32,6 +34,7 @@ def find_bbox(file_path):
 
 
 def heat_map(traj_dir):
+    """ 画出轨迹热力图 """
     san_mbr = MBR(37.6988, -122.5173, 37.8089, -122.3784)  # 12km * 12km
     san_grid = Grid(san_mbr, 800, 800)
     res = np.zeros((san_grid.row_num, san_grid.col_num), dtype=np.int32)
@@ -56,6 +59,7 @@ def heat_map(traj_dir):
 
 
 def sort_by_time(traj_dir):
+    """ 对轨迹点按时间排序 """
     files = list(os.listdir(traj_dir))
     for i in range(len(files)):
         traj = pd.read_csv(os.path.join(traj_dir, files[i]))
@@ -66,6 +70,7 @@ def sort_by_time(traj_dir):
 
 
 def convert_to_wkt(traj_dir):
+    """ 将轨迹点转换为WKT格式 方便QGIS可视化"""
     # TODO
     files = list(os.listdir(traj_dir))
     for i in range(len(files)):
@@ -74,6 +79,8 @@ def convert_to_wkt(traj_dir):
 
 
 def empty_rate(traj_dir):
+    """ 计算出租车的空车率 """
+
     def count_occ(o: list) -> int:
         count = 1 if o[0] == 1 else 0
         for k in range(1, len(o)):
@@ -98,6 +105,7 @@ def empty_rate(traj_dir):
 
 
 def filter_od(traj_dir):
+    """ 找到乘客的起点及终点数据 即OD数据"""
     san_mbr = MBR(37.6988, -122.5173, 37.8089, -122.3784)  # 12km * 12km
     files = list(os.listdir(traj_dir))
     start_pos = pd.DataFrame(columns=("lat", "lng", "time"))
